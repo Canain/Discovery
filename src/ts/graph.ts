@@ -285,7 +285,7 @@ class Graph {
 				align: 'center'
 			});
 			keyword.text.fontWeight = 'lighter';
-			keyword.text.stroke = '#000000';//'#545454';
+			keyword.text.stroke = '#545454';
 			keyword.text.strokeThickness = 2;
 			keyword.text.anchor.setTo(Math.random(), Math.random());
 			// keyword.text.alpha = 0.9;
