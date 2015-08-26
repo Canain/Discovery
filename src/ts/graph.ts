@@ -38,6 +38,32 @@ interface BitmapDataDictionary {
 	[color: string]: Phaser.BitmapData;
 }
 
+interface ColorDictionary {
+	[group: string]: string;
+}
+
+interface Keyword {
+	color: string;
+	keyword: string;
+	nodes: Node[];
+	text?: Phaser.Text;
+}
+
+interface Group {
+	group: string;
+	color: string;
+	nodes: Node[];
+	keywords: KeywordDictionary;
+}
+
+interface GroupDictionary {
+	[group: string]: Group;
+}
+
+interface KeywordDictionary {
+	[keyword: string]: Keyword;
+}
+
 class Graph {
 	
 	game: Phaser.Game;
@@ -56,6 +82,7 @@ class Graph {
 	stroke: number;
 	
 	min: number;
+	max: number;
 	
 	graphics: Phaser.Graphics;
 	
@@ -66,13 +93,25 @@ class Graph {
 		size: number;
 	};
 	
+	groupColors: ColorDictionary;
+	
+	groups: GroupDictionary;
+	
+	keywordThreshold: number;
+	
 	constructor(public graph: GraphData) {
-		this.game = new Phaser.Game('100%', '100%', Phaser.AUTO, $('body')[0], {
+		var w = $(window);
+		var width = w.width() - 20;
+		var height = w.height() - 20;
+		this.min = Math.min(width, height);
+		this.max = Math.max(width, height);
+		
+		this.game = new Phaser.Game(width, width, Phaser.AUTO, $('body')[0], {
 			preload: this.preload.bind(this),
 			create: this.create.bind(this),
 			update: this.update.bind(this),
 			render: this.render.bind(this)
-		}, false, true);
+		}, false, false);
 		this.game.forceSingleUpdate = true;
 		
 		this.nodes = {};
@@ -113,10 +152,15 @@ class Graph {
 			});
 		});
 		
-		this.colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
+		this.colors = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896',
+			'#9467bd', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22',
+			'#dbdb8d', '#17becf', '#9edae5'];
 		this.bmps = {};
+		this.groupColors = {};
+		this.groups = {};
 		
 		this.stroke = 1;
+		this.keywordThreshold = 2;
 	}
 	
 	preload() {
@@ -125,16 +169,14 @@ class Graph {
 	
 	create() {
 		this.game.time.advancedTiming = true;
-		this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+		// this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 		this.game.stage.backgroundColor = '#FFFFFF';
 		
 		this.scale = Math.min(this.game.world.width, this.game.world.height) / 100;
 		
-		this.radius = 0.5;
+		this.radius = 0.2;
 		this.radius *= this.scale;
 		this.diameter = this.radius * 2;
-		
-		this.min = Math.min(this.game.world.width, this.game.world.height) - this.diameter;
 		
 		this.d3.force
 			.nodes(this.d3.nodes)
@@ -157,7 +199,7 @@ class Graph {
 			bmp.ctx.closePath();
 			bmp.ctx.fill();
 			bmp.ctx.lineWidth = this.stroke;
-			bmp.ctx.strokeStyle = 'black';
+			bmp.ctx.strokeStyle = '#7e7e7e';
 			bmp.ctx.stroke();
 			
 			this.bmps[color] = bmp;
@@ -168,19 +210,93 @@ class Graph {
 		this.graph.nodes.forEach((node: Node) => {
 			var transversed: NodeDictionary = {};
 			
-			var color = this.transverse(node, transversed);
+			// var color = this.transverse(node, transversed);
+			var color = this.groupColors[node.group];
 			
 			if (!color) {
 				color = this.colors[Math.floor(Math.random() * this.colors.length)];
-				for (var i in transversed) {
-					transversed[i].color = color;
-				}
+				// for (var i in transversed) {
+				// 	transversed[i].color = color;
+				// }
+				this.groupColors[node.group] = color;
+				node.color = color;
 			}
-			node.color = color;
 			
 			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), this.bmps[color]);
 			node.sprite.anchor.setTo(0.5);
+			
+			var group = this.groups[node.group];
+			if (!group) {
+				group = {
+					group: node.group,
+					nodes: [],
+					keywords: {},
+					color: node.color
+				};
+				this.groups[group.group] = group;
+			}
+			group.nodes.push(node);
 		});
+		
+		var textKeywords = [];
+		
+		for (var i in this.groups) {
+			var group = this.groups[i];
+			group.nodes.forEach((node: Node) => {
+				node.keywords.forEach((word: string) => {
+					var keyword = group.keywords[word];
+					if (!keyword) {
+						keyword = {
+							color: group.color,
+							keyword: word,
+							nodes: []
+						};
+						group.keywords[keyword.keyword] = keyword;
+					}
+					keyword.nodes.push(node);
+				});
+			});
+			for (var j in group.keywords) {
+				var keyword = group.keywords[j];
+				if (keyword.nodes.length < this.keywordThreshold) {
+					continue;
+				}
+				
+				textKeywords.push(keyword);
+			}
+		}
+		
+		textKeywords.sort((a: Keyword, b: Keyword) => {
+			return a.nodes.length - b.nodes.length;
+		});
+		
+		textKeywords.forEach((keyword: Keyword) => {
+			var center = this.calculateCenter(keyword.nodes);
+			
+			keyword.text = this.game.add.text(center.x, center.y, keyword.keyword, {
+				font: (keyword.nodes.length * 1 + 20) + 'px Calibri',
+				fill: keyword.color,
+				align: 'center'
+			});
+			keyword.text.fontWeight = 'lighter';
+			keyword.text.stroke = '#545454';
+			keyword.text.strokeThickness = 2;
+			keyword.text.anchor.setTo(Math.random(), Math.random());
+			// keyword.text.alpha = 0.9;
+		});
+	}
+	
+	calculateCenter(nodes: Node[]) {
+		var x = 0;
+		var y = 0;
+		nodes.forEach((node: Node) => {
+			x += node.sprite.x;
+			y += node.sprite.y;
+		});
+		x /= nodes.length;
+		y /= nodes.length;
+		
+		return new Phaser.Point(x, y);
 	}
 	
 	transverse(node: Node, transversed: NodeDictionary) {
@@ -202,11 +318,11 @@ class Graph {
 	}
 	
 	getNodeX(node: d3.layout.force.Node) {
-		return (node.x - this.d3.size / 2) / this.d3.size * this.min + this.game.width / 2;
+		return (node.x - this.d3.size / 2) / this.d3.size * this.max + this.game.width / 2;
 	}
 	
 	getNodeY(node: d3.layout.force.Node) {
-		return (node.y - this.d3.size / 2) / this.d3.size * this.min + this.game.height / 2;
+		return (node.y - this.d3.size / 2) / this.d3.size * this.max + this.game.height / 2;
 	}
 	
 	update() {
@@ -228,6 +344,18 @@ class Graph {
 			this.graphics.moveTo(source.x, source.y);
 			this.graphics.lineTo(target.x, target.y);
 		});
+		
+		for (var i in this.groups) {
+			var group = this.groups[i];
+			for (var j in group.keywords) {
+				var keyword = group.keywords[j];
+				if (keyword.text) {
+					var center = this.calculateCenter(keyword.nodes);
+					keyword.text.x = center.x;
+					keyword.text.y = center.y;
+				}
+			}
+		}
 	}
 	
 	render() {
