@@ -27,6 +27,10 @@ interface GraphData {
 	nodes: Node[];
 }
 
+interface BitmapDataDictionary {
+	[color: string]: Phaser.BitmapData;
+}
+
 class Graph {
 	
 	game: Phaser.Game;
@@ -37,9 +41,16 @@ class Graph {
 	
 	colors: string[];
 	
+	bmps: BitmapDataDictionary;
+	
 	group: Phaser.Physics.P2.CollisionGroup;
 	
 	friction: number;
+	
+	radius: number;
+	diameter: number;
+	
+	min: number;
 	
 	constructor(public graph: GraphData) {
 		this.game = new Phaser.Game('100%', '100%', Phaser.AUTO, $('body')[0], {
@@ -64,6 +75,7 @@ class Graph {
 		});
 		
 		this.colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
+		this.bmps = {};
 		
 		this.friction = 100;
 	}
@@ -83,8 +95,31 @@ class Graph {
 		
 		this.group = this.game.physics.p2.createCollisionGroup();
 		
+		this.radius = 0.5;
+		this.radius *= this.scale;
+		this.diameter = this.radius * 2;
+		
+		this.min = Math.min(this.game.world.width, this.game.world.height) - this.diameter;
+		
+		this.colors.forEach((color: string) => {
+			var bmp = this.game.add.bitmapData(this.diameter, this.diameter);
+			
+			var width = 1;
+			
+			bmp.ctx.fillStyle = color;
+			bmp.ctx.beginPath();
+			bmp.ctx.arc(this.radius, this.radius, this.radius - width, 0, Math.PI * 2);
+			bmp.ctx.closePath();
+			bmp.ctx.fill();
+			bmp.ctx.lineWidth = width;
+			bmp.ctx.strokeStyle = 'black';
+			bmp.ctx.stroke();
+			
+			this.bmps[color] = bmp;
+		});
+		
 		this.graph.nodes.forEach((node: Node) => {
-			var circle = this.createCircle(this.colors[Math.floor(Math.random() * this.colors.length)], .5);
+			var circle = this.createCircle(this.colors[Math.floor(Math.random() * this.colors.length)]);
 			this.game.physics.p2.enable(circle);
 			var body = <Phaser.Physics.P2.Body>circle.body;
 			body.setCircle(.5 * this.scale);
@@ -97,34 +132,15 @@ class Graph {
 		});
 	}
 	
-	createCircle(color: string, radius: number) {
-			
-		radius *= this.scale;
-			
-		var diameter = radius * 2;
-		var bmp = this.game.add.bitmapData(diameter, diameter);
-		
-		var width = 1;
-		
-		bmp.ctx.fillStyle = color;
-		bmp.ctx.beginPath();
-		bmp.ctx.arc(radius, radius, radius - width, 0, Math.PI * 2);
-		bmp.ctx.closePath();
-		bmp.ctx.fill();
-		bmp.ctx.lineWidth = width;
-		bmp.ctx.strokeStyle = 'black';
-		bmp.ctx.stroke();
-		
-		var min = Math.min(this.game.world.width, this.game.world.height) - diameter;
-		
+	createCircle(color: string) {
 		var center = new Phaser.Point(this.game.world.centerX, this.game.world.centerY);
 		
-		var move = new Phaser.Point((1 - Math.pow(Math.random(), 2)) * min / 2, 0);
+		var move = new Phaser.Point((1 - Math.pow(Math.random(), 2)) * this.min / 2, 0);
 		move.rotate(0, 0, Math.random() * Math.PI * 2);
 		
 		center.add(move.x, move.y);
 		
-		return this.game.add.sprite(center.x, center.y, bmp);
+		return this.game.add.sprite(center.x, center.y, this.bmps[color]);
 	}
 	
 	update() {
