@@ -190,9 +190,9 @@ class Graph {
 			}
 			transversed[node.id] = node;
 			node.connections.forEach((connection: Connection) => {
-				if (connection.distance > 4) {
-					return;
-				}
+				// if (connection.distance > 2) {
+				// 	return;
+				// }
 				var color = this.transverse(connection.target, transversed);
 				if (color) {
 					return color;
