@@ -1,0 +1,30 @@
+{
+    "version": "0.1.0",
+    "command": "gulp",
+    "isShellCommand": true,
+    "args": [
+        "--no-color"
+    ],
+    "showOutput": "silent",
+    "tasks": [
+        {
+            "taskName": "build",
+            "isBuildCommand": true,
+            "problemMatcher": [
+                "$lessCompile",
+                "$gulp-tsc",
+                "$jshint"
+            ]
+        },
+        {
+            "taskName": "test-debug",
+            "isTestCommand": true,
+            "showOutput": "silent",
+            "problemMatcher": [
+                "$lessCompile",
+                "$gulp-tsc",
+                "$jshint"
+            ]
+        }
+    ]
+}

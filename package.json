@@ -1,0 +1,22 @@
+{
+  "name": "discovery",
+  "version": "1.0.0",
+  "author": "Shuyang Chen <sc1085@gmail.com>",
+  "dependencies": {
+    "bower": "^1.4.1",
+    "browserify": "^11.0.1",
+    "del": "^1.2.1",
+    "gulp": "^3.9.0",
+    "gulp-open": "^1.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-serve": "^1.0.0",
+    "less": "^2.5.1",
+    "mkdirp": "^0.5.1",
+    "run-sequence": "^1.1.2",
+    "tsd": "^0.6.3",
+    "typescript": "^1.5.3",
+    "uglify-js": "^2.4.24",
+    "uglifycss": "0.0.17"
+  },
+  "private": true
+}
