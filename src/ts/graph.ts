@@ -57,10 +57,13 @@ class Graph {
 	
 	min: number;
 	
+	graphics: Phaser.Graphics;
+	
 	d3: {
 		force: d3.layout.Force<d3.layout.force.Link<d3.layout.force.Node>, d3.layout.force.Node>;
 		nodes: d3.layout.force.Node[];
 		links: d3.layout.force.Link<d3.layout.force.Node>[];
+		size: number;
 	};
 	
 	constructor(public graph: GraphData) {
@@ -94,7 +97,8 @@ class Graph {
 		this.d3 = {
 			force: d3.layout.force(),
 			nodes: [],
-			links: []
+			links: [],
+			size: 1500
 		}
 		
 		this.graph.nodes.forEach((node: Node) => {
@@ -135,7 +139,7 @@ class Graph {
 		this.d3.force
 			.nodes(this.d3.nodes)
 			.links(this.d3.links)
-			// .size([this.game.world.width, this.game.world.width])
+			.size([this.d3.size, this.d3.size])
 			.linkStrength(0.1)
 			// .friction(0.9)
 			.linkDistance(50)
@@ -159,6 +163,8 @@ class Graph {
 			this.bmps[color] = bmp;
 		});
 		
+		this.graphics = this.game.add.graphics(0, 0);
+		
 		this.graph.nodes.forEach((node: Node) => {
 			var transversed: NodeDictionary = {};
 			
@@ -173,11 +179,9 @@ class Graph {
 			node.color = color;
 			
 			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), this.bmps[color]);
+			node.sprite.anchor.setTo(0.5);
 		});
 		
-		// this.graph.edges.forEach((edge: Edge) => {
-			
-		// });
 		this.d3.force.start();
 	}
 	
@@ -190,9 +194,6 @@ class Graph {
 			}
 			transversed[node.id] = node;
 			node.connections.forEach((connection: Connection) => {
-				// if (connection.distance > 2) {
-				// 	return;
-				// }
 				var color = this.transverse(connection.target, transversed);
 				if (color) {
 					return color;
@@ -203,20 +204,27 @@ class Graph {
 	}
 	
 	getNodeX(node: d3.layout.force.Node) {
-		return (node.x - 0.5) / 1500 * this.min + this.game.width / 2;
+		return (node.x - this.d3.size / 2) / this.d3.size * this.min + this.game.width / 2;
 	}
 	
 	getNodeY(node: d3.layout.force.Node) {
-		return (node.y - 0.5) / 1500 * this.min + this.game.height / 2;
+		return (node.y - this.d3.size / 2) / this.d3.size * this.min + this.game.height / 2;
 	}
 	
 	update() {
-		// (<any>this.d3.force).tick();
-		// this.d3.force.stop();
-		
 		this.graph.nodes.forEach((node: Node) => {
 			node.sprite.x = this.getNodeX(node.node);
 			node.sprite.y = this.getNodeY(node.node);
+		});
+		
+		this.graphics.clear();
+		
+		this.graph.edges.forEach((edge: Edge) => {
+			this.graphics.lineStyle(1, 0, 0.2);
+			var source = edge.sourceNode.sprite;
+			var target = edge.targetNode.sprite;
+			this.graphics.moveTo(source.x, source.y);
+			this.graphics.lineTo(target.x, target.y);
 		});
 	}
 	
