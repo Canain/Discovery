@@ -99,10 +99,16 @@ class Graph {
 	
 	keywordThreshold: number;
 	
+	devicePixelRatio: number;
+	
 	constructor(public graph: GraphData) {
 		var w = $(window);
-		var width = w.width() - 20;
-		var height = w.height() - 20;
+		var scrollbar = this.getScrollbarWidth();
+		this.devicePixelRatio = window.devicePixelRatio === undefined ? 1 : window.devicePixelRatio;
+		var width = w.width() - scrollbar;
+		var height = w.height() - scrollbar;
+		width *= this.devicePixelRatio;
+		height *= this.devicePixelRatio;
 		this.min = Math.min(width, height);
 		this.max = Math.max(width, height);
 		
@@ -169,13 +175,13 @@ class Graph {
 	
 	create() {
 		this.game.time.advancedTiming = true;
-		// this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+		this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 		this.game.stage.backgroundColor = '#FFFFFF';
 		
 		this.scale = Math.min(this.game.world.width, this.game.world.height) / 100;
 		
 		this.radius = 0.2;
-		this.radius *= this.scale;
+		this.radius *= this.scale * this.devicePixelRatio;
 		this.diameter = this.radius * 2;
 		
 		this.d3.force
@@ -274,16 +280,41 @@ class Graph {
 			var center = this.calculateCenter(keyword.nodes);
 			
 			keyword.text = this.game.add.text(center.x, center.y, keyword.keyword, {
-				font: (keyword.nodes.length * 1 + 20) + 'px Calibri',
+				font: ((keyword.nodes.length * 1 + 20) * this.devicePixelRatio) + 'px Calibri',
 				fill: keyword.color,
 				align: 'center'
 			});
 			keyword.text.fontWeight = 'lighter';
-			keyword.text.stroke = '#545454';
+			keyword.text.stroke = '#000000';//'#545454';
 			keyword.text.strokeThickness = 2;
 			keyword.text.anchor.setTo(Math.random(), Math.random());
 			// keyword.text.alpha = 0.9;
 		});
+	}
+	
+	getScrollbarWidth() {
+		var outer = document.createElement("div");
+		outer.style.visibility = "hidden";
+		outer.style.width = "100px";
+		outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
+	
+		document.body.appendChild(outer);
+	
+		var widthNoScroll = outer.offsetWidth;
+		// force scrollbars
+		outer.style.overflow = "scroll";
+	
+		// add innerdiv
+		var inner = document.createElement("div");
+		inner.style.width = "100%";
+		outer.appendChild(inner);        
+	
+		var widthWithScroll = inner.offsetWidth;
+	
+		// remove divs
+		outer.parentNode.removeChild(outer);
+	
+		return widthNoScroll - widthWithScroll;
 	}
 	
 	calculateCenter(nodes: Node[]) {
