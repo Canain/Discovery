@@ -17,6 +17,7 @@ interface Node {
 	connections?: Node[];
 	node?: d3.layout.force.Node;
 	sprite?: Phaser.Sprite;
+	color?: string;
 }
 
 interface NodeDictionary {
@@ -148,14 +149,43 @@ class Graph {
 		});
 		
 		this.graph.nodes.forEach((node: Node) => {
-			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), 
-				this.bmps['#FF0000']);
+			var transversed: NodeDictionary = {};
+			
+			var color = this.transverse(node, transversed);
+			
+			if (!color) {
+				color = this.colors[Math.floor(Math.random() * this.colors.length)];
+				for (var i in transversed) {
+					transversed[i].color = color;
+				}
+			}
+			node.color = color;
+			
+			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), this.bmps[color]);
 		});
 		
 		// this.graph.edges.forEach((edge: Edge) => {
 			
 		// });
 		this.d3.force.start();
+	}
+	
+	transverse(node: Node, transversed: NodeDictionary) {
+		if (transversed[node.id]) {
+			return node.color;
+		} else {
+			if (node.color) {
+				return node.color;
+			}
+			transversed[node.id] = node;
+			node.connections.forEach((n: Node) => {
+				var color = this.transverse(n, transversed);
+				if (color) {
+					return color;
+				}
+			});
+			return node.color;
+		}
 	}
 	
 	getNodeX(node: d3.layout.force.Node) {
