@@ -14,10 +14,15 @@ interface Node {
 	name: string;
 	source: string;
 	url: string;
-	connections?: Node[];
+	connections?: Connection[];
 	node?: d3.layout.force.Node;
 	sprite?: Phaser.Sprite;
 	color?: string;
+}
+
+interface Connection {
+	target: Node;
+	distance: number;
 }
 
 interface NodeDictionary {
@@ -76,8 +81,14 @@ class Graph {
 		this.graph.edges.forEach((edge: Edge) => {
 			edge.sourceNode = this.nodes[edge.source];
 			edge.targetNode = this.nodes[edge.target];
-			edge.sourceNode.connections.push(edge.targetNode);
-			edge.targetNode.connections.push(edge.sourceNode);
+			edge.sourceNode.connections.push({
+				target: edge.targetNode,
+				distance: edge.value
+			});
+			edge.targetNode.connections.push({
+				target: edge.sourceNode,
+				distance: edge.value
+			});
 		});
 		
 		this.d3 = {
@@ -178,13 +189,16 @@ class Graph {
 				return node.color;
 			}
 			transversed[node.id] = node;
-			node.connections.forEach((n: Node) => {
-				var color = this.transverse(n, transversed);
+			node.connections.forEach((connection: Connection) => {
+				if (connection.distance > 4) {
+					return;
+				}
+				var color = this.transverse(connection.target, transversed);
 				if (color) {
 					return color;
 				}
 			});
-			return node.color;
+			return null;
 		}
 	}
 	
