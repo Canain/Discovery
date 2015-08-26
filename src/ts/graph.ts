@@ -73,7 +73,7 @@ class Graph {
 			update: this.update.bind(this),
 			render: this.render.bind(this)
 		}, false, true);
-		// this.game.forceSingleUpdate = true;
+		this.game.forceSingleUpdate = true;
 		
 		this.nodes = {};
 		this.graph.nodes.forEach((node: Node) => {
@@ -181,8 +181,6 @@ class Graph {
 			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), this.bmps[color]);
 			node.sprite.anchor.setTo(0.5);
 		});
-		
-		this.d3.force.start();
 	}
 	
 	transverse(node: Node, transversed: NodeDictionary) {
@@ -212,6 +210,10 @@ class Graph {
 	}
 	
 	update() {
+		this.d3.force.start();
+		(<any>this.d3.force).tick();
+		this.d3.force.stop();
+		
 		this.graph.nodes.forEach((node: Node) => {
 			node.sprite.x = this.getNodeX(node.node);
 			node.sprite.y = this.getNodeY(node.node);
