@@ -49,7 +49,7 @@ var npmBin;
 function run(program, args, done, global) {
 	if (npmBin === undefined) {
 		getNpmBin(function () {
-			run(program, args, done);
+			run(program, args, done, global);
 		});
 	} else {
 		if (!global) {
