@@ -230,6 +230,9 @@ class Graph {
 			
 			node.sprite = this.game.add.sprite(this.getNodeX(node.node), this.getNodeY(node.node), this.bmps[color]);
 			node.sprite.anchor.setTo(0.5);
+			if (node.connections.length == 0) {
+				node.sprite.kill();
+			}
 			
 			var group = this.groups[node.group];
 			if (!group) {
