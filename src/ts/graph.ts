@@ -1,3 +1,6 @@
+import d3 = require('d3');
+import $ = require('jquery');
+
 interface Edge {
 	source: string;
 	target: string;

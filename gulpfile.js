@@ -17,16 +17,12 @@ var paths = {
 	browserify: 'out/ts/main.js',
 	js:
 		'{' +
-			'bower_components/phaser/build/phaser.min.js,' + 
-			'bower_components/jquery/dist/jquery.min.js,' + 
-			'bower_components/d3/d3.min.js,' +
+			'bower_components/phaser/build/phaser.js,' +
 			'out/browserify/bundle.js' +
 		'}',
 	debug:
 		'{' +
-			'bower_components/phaser/build/phaser.js,' + 
-			'bower_components/jquery/dist/jquery.js,' +
-			'bower_components/d3/d3.js,' +
+			'bower_components/phaser/build/phaser.min.js,' +
 			'out/browserify/bundle.js' +
 		'}',
 	css:
